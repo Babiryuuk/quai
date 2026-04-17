@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Plan des quais – temps réel</title>
+<title>Disponibilité des quais</title>
 
 <style>
   body {
@@ -24,10 +24,10 @@
 
   .dock {
     position: absolute;
-    width: 36px;
-    height: 22px;
-    border-radius: 4px;
-    font-size: 11px;
+    width: 60px;
+    height: 28px;
+    border-radius: 6px;
+    font-size: 14px;
     font-weight: bold;
     color: white;
     display: flex;
@@ -36,6 +36,7 @@
     cursor: pointer;
     user-select: none;
     z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
 
   .red { background: #c0392b; }
@@ -47,9 +48,15 @@
 
 <div id="container">
   <!-- IMAGE DU PLAN -->
-  <img src="plan.png" alt="Plan des quais">
+  plan01.png
 
-  <!-- LES 100 CASES SERONT CRÉÉES ICI -->
+  <!-- 🔵 6 QUAIS (positions ajustables) -->
+  <div class="dock red" data-id="Q6" style="top:610px; left:1020px;">6</div>
+  <div class="dock red" data-id="Q5" style="top:610px; left:930px;">5</div>
+  <div class="dock red" data-id="Q4" style="top:610px; left:840px;">4</div>
+  <div class="dock red" data-id="Q3" style="top:610px; left:750px;">3</div>
+  <div class="dock red" data-id="Q2" style="top:610px; left:660px;">2</div>
+  <div class="dock red" data-id="Q1" style="top:610px; left:570px;">1</div>
 </div>
 
 <script type="module">
@@ -62,7 +69,7 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-/* 🔐 CONFIG FIREBASE */
+/* 🔐 FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBpKGxGcC6IHvNTu9bpTwi_4jZIAF5olg",
   authDomain: "projet-plan-dynamique-pour-ma.firebaseapp.com",
@@ -75,34 +82,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const container = document.getElementById("container");
-
-/* 📐 PARAMÈTRES DE POSITIONNEMENT */
-const startX = 300;   // position horizontale de départ
-const startY = 600;   // position verticale
-const gapX = 42;      // espace entre cases
-const perRow = 20;    // cases par ligne
-
-/* 🔁 CRÉATION DES 100 QUAIS */
-for (let i = 1; i <= 100; i++) {
-  const id = "Q" + String(i).padStart(2, "0");
-
-  const dock = document.createElement("div");
-  dock.className = "dock red";
-  dock.textContent = i;
-  dock.dataset.id = id;
-
-  const col = (i - 1) % perRow;
-  const row = Math.floor((i - 1) / perRow);
-
-  dock.style.left = (startX + col * gapX) + "px";
-  dock.style.top  = (startY + row * 30) + "px";
-
-  container.appendChild(dock);
-
+/* 🔁 LOGIQUE TEMPS RÉEL */
+document.querySelectorAll(".dock").forEach(dock => {
+  const id = dock.dataset.id;
   const ref = doc(db, "quais", id);
 
-  /* clic → bascule rouge / vert */
+  // clic camion → change l’état
   dock.addEventListener("click", async () => {
     const snap = await getDoc(ref);
     const current = snap.exists() ? snap.data().etat : "red";
@@ -110,15 +95,16 @@ for (let i = 1; i <= 100; i++) {
     await setDoc(ref, { etat: next }, { merge: true });
   });
 
-  /* temps réel */
+  // poste de garde → voit en direct
   onSnapshot(ref, snap => {
     dock.classList.remove("red", "green");
     dock.classList.add(
       snap.exists() ? snap.data().etat : "red"
     );
   });
-}
+});
 </script>
 
 </body>
 </html>
+``
